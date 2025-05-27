@@ -20,13 +20,12 @@ import javax.swing.JOptionPane;
  * @author Escritorio -David
  */
 public class Triage {
-private List<Habitacion> habitaciones = new ArrayList<>();
-
-   private SistemaUrgencias sistema;
+    private List<Habitacion> habitaciones = new ArrayList<>();
+    private SistemaUrgencias sistema;
 
     public Triage(SistemaUrgencias sistema) {
         this.sistema = sistema;
-    } 
+    }
 
     public ResultadoTriage determinarResultadoTriage(Paciente paciente, int nivelDolor, boolean fiebreAlta, boolean dificultadRespirar) {
         if (dificultadRespirar || nivelDolor >= 8) {
@@ -36,7 +35,6 @@ private List<Habitacion> habitaciones = new ArrayList<>();
             if (habitacion != null) {
                 return new AdmitidoUrgencias(servicio, habitacion);
             } else {
-              
                 JOptionPane.showMessageDialog(null, "No hay habitaciones disponibles para el paciente " + paciente.getNombre() 
                         + ". No se puede admitir en este momento.", "Error de Recursos", JOptionPane.WARNING_MESSAGE);
                 return null;
@@ -46,6 +44,26 @@ private List<Habitacion> habitaciones = new ArrayList<>();
         } else {
             return new AltaConsultaPrioritaria(paciente);
         }
+    }
+
+    public boolean asignarPrioridad(String id, String prioridad) {
+        Paciente paciente = sistema.buscarPacientePorId(id);
+        if (paciente != null) {
+            paciente.setPrioridad(prioridad);
+            paciente.actualizarHistorial("Prioridad asignada: " + prioridad);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean actualizarEstado(String id, String estado) {
+        Paciente paciente = sistema.buscarPacientePorId(id);
+        if (paciente != null) {
+            paciente.setEstado(estado);
+            paciente.actualizarHistorial("Estado actualizado: " + estado);
+            return true;
+        }
+        return false;
     }
 }
 

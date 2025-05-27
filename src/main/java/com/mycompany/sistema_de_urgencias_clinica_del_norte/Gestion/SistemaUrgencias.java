@@ -28,6 +28,13 @@ public class SistemaUrgencias {
         pacientes = new ArrayList<>();
         medicos = new ArrayList<>();
         tratamientos = new ArrayList<>();
+        
+        // Habitaciones predefinidas
+        habitaciones.add(new Habitacion(101, "Individual"));
+        habitaciones.add(new Habitacion(102, "Doble"));
+        habitaciones.add(new Habitacion(201, "UCI"));
+        habitaciones.add(new Habitacion(202, "Individual"));
+        habitaciones.add(new Habitacion(203, "Doble"));
     }
 
     public Habitacion buscarHabitacionDisponible() {
@@ -80,5 +87,9 @@ public class SistemaUrgencias {
             }
         }
         return null;
+    }
+
+    public List<Habitacion> getHabitaciones() {
+        return habitaciones;
     }
 }

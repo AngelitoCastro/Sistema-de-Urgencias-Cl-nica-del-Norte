@@ -15,6 +15,7 @@ public class Tratamiento {
     private String descripcion;
     private String indicaciones;
     private List<String> medicamentos;
+    private Medico medico;
 
     public Tratamiento(String id, String descripcion, String indicaciones, List<String> medicamentos) {
         this.idTratamiento = id;
@@ -27,6 +28,20 @@ public class Tratamiento {
         return "Tratamiento ID: " + idTratamiento +
                "\nDescripción: " + descripcion +
                "\nIndicaciones: " + indicaciones +
-               "\nMedicamentos: " + medicamentos;
+               "\nMedicamentos: " + medicamentos +
+               (medico != null ? "\nPrescrito por: " + medico.getNombre() : "");
+    }
+
+    public String getIdTratamiento() {
+        return idTratamiento;
+    }
+
+    public Medico getMedico() {
+        return medico;
+    }
+
+    public void setMedico(Medico medico) {
+        this.medico = medico;
     }
 }
+

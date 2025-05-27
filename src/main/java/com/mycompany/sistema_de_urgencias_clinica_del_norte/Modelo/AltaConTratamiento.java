@@ -24,7 +24,7 @@ public class AltaConTratamiento implements ResultadoTriage{
     public void procesarResultado() {
         paciente.actualizarHistorial("Tratamiento asignado:\n" + tratamiento);
         JOptionPane.showMessageDialog(null,"Paciente"+ paciente.getNombre()
-                +"dado de alta con tratamiento ambulatorio registrado. \nDetalle del tratamiento:\n"
+                +"\n dado de alta con tratamiento ambulatorio registrado. Detalle del tratamiento:\n"
                 +tratamiento.toString());
 
     }

@@ -18,33 +18,50 @@ public class Admisiones {
         this.sistema = sistema;
     }
 
-    public void actualizarDatosPaciente(String id, String nuevoContacto) {
-        Paciente p = sistema.buscarPacientePorId(id);
-        if (p != null) {
-            p.setDatosContacto(nuevoContacto);
+    public Paciente registrarPaciente(String id, String nombre, int edad, String genero) {
+        if (sistema.buscarPacientePorId(id) != null) {
+            return null; // Ya existe un paciente con ese ID
         }
+        Paciente paciente = new Paciente(id, nombre, "", edad, genero);
+        sistema.registrarPaciente(paciente);
+        return paciente;
     }
 
-    public void desactivarPaciente(String id) {
-        Paciente p = sistema.buscarPacientePorId(id);
-        if (p != null) {
-            p.setEstadoTriage("Inactivo");
+    public boolean actualizarPaciente(String id, String nombre, int edad, String genero) {
+        Paciente paciente = sistema.buscarPacientePorId(id);
+        if (paciente != null) {
+            paciente.setNombre(nombre);
+            paciente.setEdad(edad);
+            paciente.setGenero(genero);
+            paciente.actualizarHistorial("Datos actualizados: nombre=" + nombre + ", edad=" + edad + ", género=" + genero);
+            return true;
         }
+        return false;
+    }
+
+    public boolean desactivarPaciente(String id) {
+        Paciente paciente = sistema.buscarPacientePorId(id);
+        if (paciente != null) {
+            paciente.setActivo(false);
+            paciente.setEstado("Inactivo");
+            paciente.actualizarHistorial("Paciente desactivado");
+            return true;
+        }
+        return false;
     }
 
     public String consultarInformacionPaciente(String id) {
-        Paciente p = sistema.buscarPacientePorId(id);
-        return (p != null) ? p.toString() : "Paciente no encontrado.";
+        Paciente paciente = sistema.buscarPacientePorId(id);
+        return (paciente != null) ? paciente.toString() : "Paciente no encontrado.";
     }
 
     public String verEstadoPaciente(String id) {
-        Paciente p = sistema.buscarPacientePorId(id);
-        return (p != null) ? p.getEstadoTriage() : "Paciente no encontrado.";
+        Paciente paciente = sistema.buscarPacientePorId(id);
+        return (paciente != null) ? paciente.getEstado() : "Paciente no encontrado.";
     }
 
-    public void registrarPaciente(String id, String nombre, String contacto) {
-        Paciente p = new Paciente(id, nombre, contacto);
-        sistema.registrarPaciente(p);
+    private String generarId() {
+        return "P" + System.currentTimeMillis();
     }
 
 }

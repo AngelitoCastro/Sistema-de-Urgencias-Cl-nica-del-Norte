@@ -13,8 +13,8 @@ import com.mycompany.sistema_de_urgencias_clinica_del_norte.Menu.Menu;
 public class Sistema_de_Urgencias_Clinica_del_Norte {
 
     public static void main(String[] args) {
-       Menu menu = new Menu();
-        menu.iniciar();
+        Menu menu = new Menu();
+        menu.setVisible(true);
     }
 }
 
