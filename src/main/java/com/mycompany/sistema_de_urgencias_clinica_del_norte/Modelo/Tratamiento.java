@@ -24,24 +24,55 @@ public class Tratamiento {
         this.medicamentos = medicamentos;
     }
 
-    public String toString() {
-        return "Tratamiento ID: " + idTratamiento +
-               "\nDescripción: " + descripcion +
-               "\nIndicaciones: " + indicaciones +
-               "\nMedicamentos: " + medicamentos +
-               (medico != null ? "\nPrescrito por: " + medico.getNombre() : "");
-    }
-
+    // Getters
     public String getIdTratamiento() {
         return idTratamiento;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public String getIndicaciones() {
+        return indicaciones;
+    }
+
+    public List<String> getMedicamentos() {
+        return medicamentos;
     }
 
     public Medico getMedico() {
         return medico;
     }
 
+    // Setters
+    public void setIdTratamiento(String idTratamiento) {
+        this.idTratamiento = idTratamiento;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
+    }
+
+    public void setIndicaciones(String indicaciones) {
+        this.indicaciones = indicaciones;
+    }
+
+    public void setMedicamentos(List<String> medicamentos) {
+        this.medicamentos = medicamentos;
+    }
+
     public void setMedico(Medico medico) {
         this.medico = medico;
+    }
+
+    @Override
+    public String toString() {
+        return "Tratamiento ID: " + idTratamiento +
+               "\nDescripción: " + descripcion +
+               "\nIndicaciones: " + indicaciones +
+               "\nMedicamentos: " + medicamentos +
+               (medico != null ? "\nPrescrito por: " + medico.getNombre() : "");
     }
 }
 
