@@ -16,6 +16,8 @@ import com.mycompany.sistema_de_urgencias_clinica_del_norte.Modelo.ResultadoTria
 import com.mycompany.sistema_de_urgencias_clinica_del_norte.Modelo.ServicioClinico;
 import com.mycompany.sistema_de_urgencias_clinica_del_norte.Modelo.Tratamiento;
 import com.mycompany.sistema_de_urgencias_clinica_del_norte.Utilidades.Estilos;
+import com.mycompany.sistema_de_urgencias_clinica_del_norte.Utilidades.ManejadorErrores;
+import com.mycompany.sistema_de_urgencias_clinica_del_norte.Utilidades.VisualizadorDatos;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Arrays;
@@ -27,32 +29,29 @@ import javax.swing.border.*;
 import javax.swing.DefaultCellEditor;
 
 /**
- *
+ * Clase principal del menú del sistema de urgencias
+ * Refactorizada para mejorar la mantenibilidad usando componentes separados
  * @author Escritorio -David
  */
 public class Menu extends JFrame {
+    // Servicios del sistema
     private SistemaUrgencias sistema;
     private Admisiones admisiones;
     private Triage triage;
+    
+    // Componentes principales de la interfaz
     private JTable tablaPacientes;
     private DefaultTableModel modeloTabla;
     private JPanel panelPrincipal;
     private CardLayout cardLayout;
     private JLabel lblEstado;
     private JLabel lblHora;
-    
-    // Referencias a botones para eventos
-    private JButton btnAdmisiones;
-    private JButton btnTriage;
-    private JButton btnMostrarPacientes;
-    private JButton btnSalir;
     private JButton btnVolver;
     
-    // Referencias a las tarjetas de estadísticas para actualización dinámica
-    private JLabel lblTotalPacientes;
-    private JLabel lblPacientesActivos;
-    private JLabel lblHabitacionesDisponibles;
-    private JLabel lblPacientesCriticos;
+    // Componentes refactorizados
+    private PanelTitulo panelTitulo;
+    private PanelResumen panelResumen;
+    private PanelBotones panelBotones;
 
     public Menu() {
         sistema = new SistemaUrgencias();
@@ -71,21 +70,10 @@ public class Menu extends JFrame {
         setLocationRelativeTo(null);
         setResizable(true);
         setMinimumSize(new Dimension(1000, 700));
-        
-        // Configurar el fondo de la ventana
         getContentPane().setBackground(Estilos.COLOR_FONDO);
-        
-        // Configurar el icono de la ventana (opcional)
-        try {
-            // Si tienes un icono, puedes agregarlo aquí
-            // setIconImage(ImageIO.read(getClass().getResource("/icon.png")));
-        } catch (Exception e) {
-            // Ignorar si no hay icono
-        }
     }
     
     private void inicializarComponentes() {
-        // Layout principal de la ventana
         setLayout(new BorderLayout());
         
         // Panel principal con CardLayout
@@ -93,7 +81,7 @@ public class Menu extends JFrame {
         cardLayout = new CardLayout();
         panelPrincipal.setLayout(cardLayout);
         
-        // Panel del menú principal
+        // Panel del menú principal usando los nuevos componentes
         JPanel panelMenu = crearPanelMenu();
         panelPrincipal.add(panelMenu, "MENU");
         
@@ -113,6 +101,31 @@ public class Menu extends JFrame {
         
         // Mostrar mensaje de bienvenida
         actualizarEstado("Sistema iniciado correctamente - Bienvenido");
+    }
+    
+    private JPanel crearPanelMenu() {
+        JPanel panel = Estilos.crearPanel(Estilos.COLOR_FONDO);
+        panel.setLayout(new BorderLayout(20, 20));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        
+        // Inicializar componentes refactorizados
+        panelTitulo = new PanelTitulo();
+        panelResumen = new PanelResumen(sistema, triage);
+        panelBotones = new PanelBotones();
+        
+        // Panel inferior con información del sistema
+        JPanel panelInfo = Estilos.crearPanel(Estilos.COLOR_FONDO);
+        panelInfo.setLayout(new FlowLayout(FlowLayout.CENTER));
+        JLabel lblInfo = Estilos.crearEtiqueta("Sistema desarrollado para gestión hospitalaria eficiente", 
+            new Font("Arial", Font.ITALIC, 12), new Color(128, 128, 128));
+        panelInfo.add(lblInfo);
+        
+        // Agregar componentes al panel principal
+        panel.add(panelTitulo, BorderLayout.NORTH);
+        panel.add(panelResumen, BorderLayout.CENTER);
+        panel.add(panelBotones, BorderLayout.SOUTH);
+        
+        return panel;
     }
     
     private JPanel crearBarraEstado() {
@@ -186,165 +199,6 @@ public class Menu extends JFrame {
         }
     }
     
-    private JPanel crearPanelMenu() {
-        JPanel panel = Estilos.crearPanel(Estilos.COLOR_FONDO);
-        panel.setLayout(new BorderLayout(20, 20));
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        
-        // Título principal con logo
-        JPanel panelTitulo = Estilos.crearPanel(Estilos.COLOR_FONDO);
-        panelTitulo.setLayout(new BorderLayout());
-        
-        JLabel lblTitulo = Estilos.crearEtiqueta("🏥 SISTEMA DE URGENCIAS", 
-            new Font("Arial", Font.BOLD, 28), Estilos.COLOR_PRIMARIO);
-        lblTitulo.setHorizontalAlignment(SwingConstants.CENTER);
-        
-        JLabel lblSubtitulo = Estilos.crearEtiqueta("CLÍNICA DEL NORTE - GESTIÓN HOSPITALARIA", 
-            new Font("Arial", Font.BOLD, 16), new Color(100, 100, 100));
-        lblSubtitulo.setHorizontalAlignment(SwingConstants.CENTER);
-        
-        panelTitulo.add(lblTitulo, BorderLayout.CENTER);
-        panelTitulo.add(lblSubtitulo, BorderLayout.SOUTH);
-        
-        // Panel de estadísticas rápidas
-        JPanel panelEstadisticas = crearPanelEstadisticasRapidas();
-        
-        // Panel de botones principales
-        JPanel panelBotones = Estilos.crearPanel(Estilos.COLOR_FONDO);
-        panelBotones.setLayout(new GridLayout(2, 2, 15, 15));
-        panelBotones.setBorder(BorderFactory.createEmptyBorder(20, 50, 20, 50));
-        
-        btnAdmisiones = Estilos.crearBoton("📋 ADMISIONES", 
-            new Dimension(200, 60), Estilos.FUENTE_BOTON, 
-            Estilos.COLOR_PRIMARIO, Color.WHITE);
-        btnTriage = Estilos.crearBoton("⚠ TRIAGE", 
-            new Dimension(200, 60), Estilos.FUENTE_BOTON, 
-            Estilos.COLOR_SECUNDARIO, Color.WHITE);
-        btnMostrarPacientes = Estilos.crearBoton("👤 VER PACIENTES", 
-            new Dimension(200, 60), Estilos.FUENTE_BOTON, 
-            Estilos.COLOR_ACENTO, Color.WHITE);
-        btnSalir = Estilos.crearBoton("🚪 SALIR", 
-            new Dimension(200, 60), Estilos.FUENTE_BOTON, 
-            new Color(220, 53, 69), Color.WHITE);
-        
-        panelBotones.add(btnAdmisiones);
-        panelBotones.add(btnTriage);
-        panelBotones.add(btnMostrarPacientes);
-        panelBotones.add(btnSalir);
-        
-        // Panel inferior con información del sistema
-        JPanel panelInfo = Estilos.crearPanel(Estilos.COLOR_FONDO);
-        panelInfo.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JLabel lblInfo = Estilos.crearEtiqueta("Sistema desarrollado para gestión hospitalaria eficiente", 
-            new Font("Arial", Font.ITALIC, 12), new Color(128, 128, 128));
-        panelInfo.add(lblInfo);
-        
-        // Agregar componentes al panel principal
-        panel.add(panelTitulo, BorderLayout.NORTH);
-        panel.add(panelEstadisticas, BorderLayout.CENTER);
-        panel.add(panelBotones, BorderLayout.SOUTH);
-        
-        return panel;
-    }
-    
-    private JPanel crearPanelEstadisticasRapidas() {
-        JPanel panel = Estilos.crearPanel(Estilos.COLOR_FONDO);
-        panel.setLayout(new GridLayout(1, 4, 15, 15));
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        
-        // Inicializar las referencias a los labels
-        lblTotalPacientes = new JLabel();
-        lblPacientesActivos = new JLabel();
-        lblHabitacionesDisponibles = new JLabel();
-        lblPacientesCriticos = new JLabel();
-        
-        // Estadística 1: Total de pacientes
-        JPanel panelStat1 = crearTarjetaEstadistica("👤", "Pacientes", 
-            String.valueOf(sistema.getPacientes().size()), Estilos.COLOR_PRIMARIO, lblTotalPacientes);
-        
-        // Estadística 2: Pacientes activos
-        int activos = (int) sistema.getPacientes().stream().filter(p -> p.isActivo()).count();
-        JPanel panelStat2 = crearTarjetaEstadistica("❤", "Activos", 
-            String.valueOf(activos), Estilos.COLOR_SECUNDARIO, lblPacientesActivos);
-        
-        // Estadística 3: Habitaciones disponibles
-        JPanel panelStat3 = crearTarjetaEstadistica("🛏", "Habitaciones", 
-            String.valueOf(sistema.getNumeroHabitacionesDisponibles()), Estilos.COLOR_ACENTO, lblHabitacionesDisponibles);
-        
-        // Estadística 4: Pacientes críticos (prioridad roja)
-        int criticos = triage.getPacientesPorPrioridad("Rojo").size();
-        JPanel panelStat4 = crearTarjetaEstadistica("⚠", "Críticos", 
-            String.valueOf(criticos), Estilos.COLOR_ERROR, lblPacientesCriticos);
-        
-        panel.add(panelStat1);
-        panel.add(panelStat2);
-        panel.add(panelStat3);
-        panel.add(panelStat4);
-        
-        return panel;
-    }
-    
-    private JPanel crearTarjetaEstadistica(String icono, String titulo, String valor, Color color, JLabel lblValorRef) {
-        JPanel tarjeta = Estilos.crearPanel(Color.WHITE);
-        tarjeta.setLayout(new BorderLayout(8, 8));
-        tarjeta.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(color, 3),
-            BorderFactory.createEmptyBorder(20, 15, 20, 15)
-        ));
-        
-        // Panel superior con icono y título
-        JPanel panelSuperior = Estilos.crearPanel(Color.WHITE);
-        panelSuperior.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
-        
-        // Icono mejorado
-        JLabel lblIcono = new JLabel(icono);
-        lblIcono.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
-        lblIcono.setForeground(color);
-        
-        // Título mejorado
-        JLabel lblTitulo = new JLabel(titulo.toUpperCase());
-        lblTitulo.setFont(new Font("Arial", Font.BOLD, 14));
-        lblTitulo.setForeground(new Color(80, 80, 80));
-        
-        panelSuperior.add(lblIcono);
-        panelSuperior.add(Box.createHorizontalStrut(5));
-        panelSuperior.add(lblTitulo);
-        
-        // Valor principal mejorado
-        JLabel lblValor = new JLabel(valor);
-        lblValor.setFont(new Font("Arial", Font.BOLD, 36));
-        lblValor.setForeground(color);
-        lblValor.setHorizontalAlignment(SwingConstants.CENTER);
-        
-        // Asignar la referencia para poder actualizar después
-        if (lblValorRef != null) {
-            // Copiar las propiedades al label de referencia
-            lblValorRef.setFont(lblValor.getFont());
-            lblValorRef.setForeground(lblValor.getForeground());
-            lblValorRef.setHorizontalAlignment(lblValor.getHorizontalAlignment());
-            lblValorRef.setText(valor);
-            lblValor = lblValorRef; // Usar la referencia
-        }
-        
-        // Indicador visual adicional
-        JPanel panelIndicador = Estilos.crearPanel(Color.WHITE);
-        panelIndicador.setLayout(new FlowLayout(FlowLayout.CENTER));
-        
-        // Barra de progreso visual simple
-        JPanel barraProgreso = new JPanel();
-        barraProgreso.setBackground(color);
-        barraProgreso.setPreferredSize(new Dimension(60, 4));
-        barraProgreso.setBorder(BorderFactory.createEmptyBorder());
-        
-        panelIndicador.add(barraProgreso);
-        
-        tarjeta.add(panelSuperior, BorderLayout.NORTH);
-        tarjeta.add(lblValor, BorderLayout.CENTER);
-        tarjeta.add(panelIndicador, BorderLayout.SOUTH);
-        
-        return tarjeta;
-    }
-    
     private JPanel crearPanelTabla() {
         JPanel panel = Estilos.crearPanel(Estilos.COLOR_FONDO);
         panel.setLayout(new BorderLayout(20, 20));
@@ -362,15 +216,15 @@ public class Menu extends JFrame {
         JPanel panelFiltros = Estilos.crearPanel(Estilos.COLOR_FONDO);
         panelFiltros.setLayout(new FlowLayout(FlowLayout.RIGHT));
         
-        JButton btnRefrescar = Estilos.crearBoton("❤ ACTUALIZAR", 
+        JButton btnRefrescar = Estilos.crearBoton("🔄 ACTUALIZAR", 
             new Dimension(130, 32), new Font("Arial", Font.BOLD, 11), 
             Estilos.COLOR_SECUNDARIO, Color.WHITE);
         btnRefrescar.addActionListener(e -> {
             actualizarTablaPacientes();
-            actualizarEstadisticasEnTiempoReal();
+            panelResumen.actualizarEstadisticas();
         });
         
-        JButton btnExportar = Estilos.crearBoton("🛏 ESTADÍSTICAS", 
+        JButton btnExportar = Estilos.crearBoton("📊 ESTADÍSTICAS", 
             new Dimension(130, 32), new Font("Arial", Font.BOLD, 11), 
             Estilos.COLOR_ACENTO, Color.WHITE);
         btnExportar.addActionListener(e -> mostrarEstadisticasGenerales());
@@ -456,7 +310,7 @@ public class Menu extends JFrame {
         JPanel panelInferior = Estilos.crearPanel(Estilos.COLOR_FONDO);
         panelInferior.setLayout(new FlowLayout(FlowLayout.CENTER, 15, 10));
         
-        btnVolver = Estilos.crearBoton("🛏 VOLVER AL MENÚ", 
+        btnVolver = Estilos.crearBoton("🏠 VOLVER AL MENÚ", 
             new Dimension(160, 38), Estilos.FUENTE_BOTON, 
             Estilos.COLOR_PRIMARIO, Color.WHITE);
         
@@ -477,34 +331,33 @@ public class Menu extends JFrame {
     }
     
     private void configurarEventos() {
-        // Configurar eventos de los botones principales usando referencias directas
-        btnAdmisiones.addActionListener(e -> {
-            mostrarMenuAdmisiones();
-            actualizarEstado("📋 Navegando a módulo de Admisiones");
-        });
-        
-        btnTriage.addActionListener(e -> {
-            mostrarMenuTriage();
-            actualizarEstado("🚨 Navegando a módulo de Triage");
-        });
-        
-        btnMostrarPacientes.addActionListener(e -> {
-            actualizarTablaPacientes();
-            cardLayout.show(panelPrincipal, "TABLA");
-            actualizarEstado("👥 Mostrando lista de pacientes");
-        });
-        
-        btnSalir.addActionListener(e -> {
-            int opcion = JOptionPane.showConfirmDialog(this, 
-                "¿Está seguro de que desea salir del sistema?", 
-                "Confirmar salida", 
-                JOptionPane.YES_NO_OPTION, 
-                JOptionPane.QUESTION_MESSAGE);
-            if (opcion == JOptionPane.YES_OPTION) {
-                actualizarEstado("🚪 Cerrando sistema...");
-                System.exit(0);
+        // Configurar eventos usando los nuevos componentes
+        panelBotones.configurarEventos(
+            e -> {
+                mostrarMenuAdmisiones();
+                actualizarEstado("📋 Navegando a módulo de Admisiones");
+            },
+            e -> {
+                mostrarMenuTriage();
+                actualizarEstado("🚨 Navegando a módulo de Triage");
+            },
+            e -> {
+                actualizarTablaPacientes();
+                cardLayout.show(panelPrincipal, "TABLA");
+                actualizarEstado("👥 Mostrando lista de pacientes");
+            },
+            e -> {
+                int opcion = JOptionPane.showConfirmDialog(this, 
+                    "¿Está seguro de que desea salir del sistema?", 
+                    "Confirmar salida", 
+                    JOptionPane.YES_NO_OPTION, 
+                    JOptionPane.QUESTION_MESSAGE);
+                if (opcion == JOptionPane.YES_OPTION) {
+                    actualizarEstado("🚪 Cerrando sistema...");
+                    System.exit(0);
+                }
             }
-        });
+        );
         
         btnVolver.addActionListener(e -> {
             cardLayout.show(panelPrincipal, "MENU");
@@ -544,6 +397,15 @@ public class Menu extends JFrame {
         });
     }
     
+    /**
+     * Actualiza las estadísticas en tiempo real
+     */
+    public void actualizarEstadisticasEnTiempoReal() {
+        if (panelResumen != null) {
+            panelResumen.actualizarEstadisticas();
+        }
+    }
+
     private void renderizarMenu(String titulo, Color colorTitulo, String[] opciones, Color colorBoton, Runnable[] acciones) {
         String key = "MENU_" + titulo.toUpperCase().replace(" ", "_");
         // Verificar si el panel ya existe
@@ -627,81 +489,28 @@ public class Menu extends JFrame {
     }
 
     private void registrarPaciente() {
-        Estilos.mostrarInputDialog(this, "Ingrese el ID del paciente:", 
-            "Registrar Paciente", id -> {
-                if (id.trim().isEmpty()) {
-                    Estilos.mostrarMensaje(this, "El ID no puede estar vacío.", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
+        DialogoNuevoPaciente dialogo = new DialogoNuevoPaciente(this, admisiones);
+        dialogo.setVisible(true);
+        
+        if (dialogo.fueGuardado()) {
+            actualizarTablaPacientes();
+            actualizarEstadisticasEnTiempoReal();
+            
+            Paciente pacienteCreado = dialogo.getPacienteCreado();
+            actualizarEstado("✅ Paciente " + pacienteCreado.getNombre() + " registrado exitosamente");
+            
+            // Si se debe enviar a triage, abrir el diálogo de triage
+            if (dialogo.debeEnviarATriage()) {
+                DialogoEvaluacionTriage dialogoTriage = new DialogoEvaluacionTriage(this, pacienteCreado, triage, sistema);
+                dialogoTriage.setVisible(true);
+                
+                if (dialogoTriage.fueCompletada()) {
+                    actualizarTablaPacientes();
+                    actualizarEstadisticasEnTiempoReal();
+                    actualizarEstado("🏥 Evaluación de triage completada para " + pacienteCreado.getNombre());
                 }
-                if (sistema.buscarPacientePorId(id) != null) {
-                    Estilos.mostrarMensaje(this, "Ya existe un paciente con ese ID.", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                Estilos.mostrarInputDialog(this, "Ingrese el nombre del paciente:", 
-                    "Registrar Paciente", nombre -> {
-                        if (!nombre.trim().isEmpty()) {
-                            Estilos.mostrarInputDialog(this, "Ingrese la edad del paciente:", 
-                                "Registrar Paciente", edad -> {
-                                    try {
-                                        int edadInt = Integer.parseInt(edad);
-                                        if (edadInt > 0) {
-                                            String[] generos = {"Masculino", "Femenino", "Otro"};
-                                            JComboBox<String> comboGenero = new JComboBox<>(generos);
-                                            JPanel panel = Estilos.crearPanel(Estilos.COLOR_FONDO);
-                                            panel.setLayout(new BorderLayout(10, 10));
-                                            panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-                                            JLabel lblGenero = Estilos.crearEtiqueta("Seleccione el género:", 
-                                                Estilos.FUENTE_TEXTO, Estilos.COLOR_TEXTO);
-                                            panel.add(lblGenero, BorderLayout.NORTH);
-                                            panel.add(comboGenero, BorderLayout.CENTER);
-                                            JButton btnAceptar = Estilos.crearBoton("Aceptar", 
-                                                new Dimension(100, 35), Estilos.FUENTE_BOTON, 
-                                                Estilos.COLOR_PRIMARIO, Color.WHITE);
-                                            btnAceptar.addActionListener(e -> {
-                                                String genero = (String)comboGenero.getSelectedItem();
-                                                Paciente paciente = admisiones.registrarPaciente(id, nombre, edadInt, genero);
-                                                if (paciente != null) {
-                                                    actualizarTablaPacientes();
-                                                    actualizarEstadisticasEnTiempoReal();
-                                                    actualizarEstado("✅ Paciente " + nombre + " registrado exitosamente");
-                                                    int opcion = JOptionPane.showConfirmDialog(this, 
-                                                        "Paciente registrado con éxito. ID: " + paciente.getId() +
-                                                        "\n¿Desea enviar a triage ahora?", "Registro Exitoso", 
-                                                        JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE);
-                                                    if (opcion == JOptionPane.YES_OPTION) {
-                                                        iniciarTriageParaPaciente(paciente);
-                                                    }
-                                                } else {
-                                                    actualizarEstado("❌ Error al registrar paciente");
-                                                    Estilos.mostrarMensaje(this, 
-                                                        "Error al registrar el paciente.", 
-                                                        "Error", JOptionPane.ERROR_MESSAGE);
-                                                }
-                                            });
-                                            panel.add(btnAceptar, BorderLayout.SOUTH);
-                                            JDialog dialogo = new JDialog(this, "Registrar Paciente", true);
-                                            dialogo.add(panel);
-                                            dialogo.pack();
-                                            dialogo.setLocationRelativeTo(this);
-                                            dialogo.setVisible(true);
-                                        } else {
-                                            Estilos.mostrarMensaje(this, 
-                                                "La edad debe ser mayor a 0.", 
-                                                "Error", JOptionPane.ERROR_MESSAGE);
-                                        }
-                                    } catch (NumberFormatException ex) {
-                                        Estilos.mostrarMensaje(this, 
-                                            "La edad debe ser un número válido.", 
-                                            "Error", JOptionPane.ERROR_MESSAGE);
-                                    }
-                                });
-        } else {
-                            Estilos.mostrarMensaje(this, 
-                                "El nombre no puede estar vacío.", 
-                                "Error", JOptionPane.ERROR_MESSAGE);
-                        }
-                    });
-        });
+            }
+        }
     }
     
     private void actualizarPaciente() {
@@ -793,26 +602,69 @@ public class Menu extends JFrame {
         Estilos.mostrarInputDialog(this, "Ingrese el ID del paciente a desactivar:", 
             "Desactivar Paciente", id -> {
                 Paciente paciente = sistema.buscarPacientePorId(id);
-                if (paciente != null) {
-                    Estilos.mostrarConfirmacion(this, 
-                        "¿Está seguro de desactivar al paciente " + paciente.getNombre() + "?", 
-                        "Confirmar desactivación", e -> {
-                            if (admisiones.desactivarPaciente(id)) {
-                                Estilos.mostrarMensaje(this, 
-                                    "Paciente desactivado con éxito.", 
-                                    "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                                actualizarTablaPacientes();
-                                actualizarEstadisticasEnTiempoReal();
-                            } else {
-                                Estilos.mostrarMensaje(this, 
-                                    "Error al desactivar el paciente.", 
-                                    "Error", JOptionPane.ERROR_MESSAGE);
-                            }
-                        });
-                } else {
-                    Estilos.mostrarMensaje(this, 
-                        "Paciente no encontrado.", 
-                        "Error", JOptionPane.ERROR_MESSAGE);
+                if (!ManejadorErrores.validarExistenciaPaciente(this, paciente, id)) {
+                    return;
+                }
+                
+                boolean confirmarDesactivacion = ManejadorErrores.mostrarConfirmacion(this, 
+                    String.format("¿Está seguro de desactivar al paciente %s?\n\nEsta acción cambiará el estado del paciente a inactivo.", 
+                        paciente.getNombre()), 
+                    "Confirmar Desactivación");
+                
+                if (confirmarDesactivacion) {
+                    try {
+                        boolean resultado = admisiones.desactivarPaciente(id);
+                        if (resultado) {
+                            ManejadorErrores.mostrarExito(this, "Desactivación de paciente", 
+                                String.format("El paciente %s ha sido desactivado exitosamente.", paciente.getNombre()));
+                            actualizarTablaPacientes();
+                            actualizarEstadisticasEnTiempoReal();
+                        } else {
+                            ManejadorErrores.mostrarError(this, ManejadorErrores.CodigoError.OPERACION_NO_PERMITIDA, 
+                                "No se pudo desactivar el paciente. Verifique que el paciente esté activo.");
+                        }
+                    } catch (Exception e) {
+                        ManejadorErrores.manejarExcepcionInesperada(this, e, "Desactivación de paciente");
+                    }
+                }
+            });
+    }
+    
+    private void reactivarPaciente() {
+        Estilos.mostrarInputDialog(this, "Ingrese el ID del paciente a reactivar:", 
+            "Reactivar Paciente", id -> {
+                Paciente paciente = sistema.buscarPacientePorId(id);
+                if (paciente == null) {
+                    ManejadorErrores.mostrarError(this, ManejadorErrores.CodigoError.PACIENTE_NO_ENCONTRADO, 
+                        "No se encontró ningún paciente con el ID: " + id);
+                    return;
+                }
+                
+                if (paciente.isActivo()) {
+                    ManejadorErrores.mostrarMensaje(this, ManejadorErrores.TipoMensaje.INFORMACION, 
+                        String.format("El paciente %s ya está activo en el sistema.", paciente.getNombre()));
+                    return;
+                }
+                
+                boolean confirmarReactivacion = ManejadorErrores.mostrarConfirmacion(this, 
+                    String.format("¿Está seguro de reactivar al paciente %s?", paciente.getNombre()), 
+                    "Confirmar Reactivación");
+                
+                if (confirmarReactivacion) {
+                    try {
+                        boolean resultado = admisiones.reactivarPaciente(id);
+                        if (resultado) {
+                            ManejadorErrores.mostrarExito(this, "Reactivación de paciente", 
+                                String.format("El paciente %s ha sido reactivado exitosamente.", paciente.getNombre()));
+                            actualizarTablaPacientes();
+                            actualizarEstadisticasEnTiempoReal();
+                        } else {
+                            ManejadorErrores.mostrarError(this, ManejadorErrores.CodigoError.OPERACION_NO_PERMITIDA, 
+                                "No se pudo reactivar el paciente.");
+                        }
+                    } catch (Exception e) {
+                        ManejadorErrores.manejarExcepcionInesperada(this, e, "Reactivación de paciente");
+                    }
                 }
             });
     }
@@ -821,52 +673,55 @@ public class Menu extends JFrame {
         Estilos.mostrarInputDialog(this, "Ingrese el ID del paciente:", 
             "Asignar Prioridad", id -> {
                 Paciente paciente = sistema.buscarPacientePorId(id);
-                if (paciente != null) {
-                    String[] prioridades = {"Rojo", "Naranja", "Amarillo", "Verde", "Azul"};
-                    JComboBox<String> comboPrioridad = new JComboBox<>(prioridades);
-                    
-                    JPanel panel = Estilos.crearPanel(Estilos.COLOR_FONDO);
-                    panel.setLayout(new BorderLayout(10, 10));
-                    panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-                    
-                    JLabel lblPrioridad = Estilos.crearEtiqueta(
-                        "Seleccione la prioridad para el paciente " + paciente.getNombre() + ":", 
-                        Estilos.FUENTE_TEXTO, Estilos.COLOR_TEXTO);
-                    
-                    panel.add(lblPrioridad, BorderLayout.NORTH);
-                    panel.add(comboPrioridad, BorderLayout.CENTER);
-                    
-                    JButton btnAceptar = Estilos.crearBoton("Aceptar", 
-                        new Dimension(100, 35), Estilos.FUENTE_BOTON, 
-                        Estilos.COLOR_SECUNDARIO, Color.WHITE);
-                    
-                    btnAceptar.addActionListener(e -> {
-                        String prioridad = (String)comboPrioridad.getSelectedItem();
-                        if (triage.asignarPrioridad(id, prioridad)) {
-                            Estilos.mostrarMensaje(this, 
-                                "Prioridad asignada con éxito.", 
-                                "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                if (!ManejadorErrores.validarExistenciaPaciente(this, paciente, id)) {
+                    return;
+                }
+                
+                String[] prioridades = {"Rojo", "Naranja", "Amarillo", "Verde", "Azul"};
+                JComboBox<String> comboPrioridad = new JComboBox<>(prioridades);
+                
+                JPanel panel = Estilos.crearPanel(Estilos.COLOR_FONDO);
+                panel.setLayout(new BorderLayout(10, 10));
+                panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+                
+                JLabel lblPrioridad = Estilos.crearEtiqueta(
+                    String.format("Seleccione la prioridad para el paciente %s:\n(Prioridad actual: %s)", 
+                        paciente.getNombre(), paciente.getPrioridad()), 
+                    Estilos.FUENTE_TEXTO, Estilos.COLOR_TEXTO);
+                
+                panel.add(lblPrioridad, BorderLayout.NORTH);
+                panel.add(comboPrioridad, BorderLayout.CENTER);
+                
+                JButton btnAceptar = Estilos.crearBoton("Aceptar", 
+                    new Dimension(100, 35), Estilos.FUENTE_BOTON, 
+                    Estilos.COLOR_SECUNDARIO, Color.WHITE);
+                
+                btnAceptar.addActionListener(e -> {
+                    String prioridad = (String)comboPrioridad.getSelectedItem();
+                    try {
+                        boolean resultado = triage.asignarPrioridad(id, prioridad);
+                        if (resultado) {
+                            ManejadorErrores.mostrarExito(this, "Asignación de prioridad", 
+                                String.format("Prioridad %s asignada exitosamente al paciente %s.", 
+                                    prioridad, paciente.getNombre()));
                             actualizarTablaPacientes();
                             actualizarEstadisticasEnTiempoReal();
                         } else {
-                            Estilos.mostrarMensaje(this, 
-                                "Error al asignar la prioridad.", 
-                                "Error", JOptionPane.ERROR_MESSAGE);
+                            ManejadorErrores.mostrarError(this, ManejadorErrores.CodigoError.OPERACION_NO_PERMITIDA, 
+                                "No se pudo asignar la prioridad al paciente.");
                         }
-                    });
-                    
-                    panel.add(btnAceptar, BorderLayout.SOUTH);
-                    
-                    JDialog dialogo = new JDialog(this, "Asignar Prioridad", true);
-                    dialogo.add(panel);
-                    dialogo.pack();
-                    dialogo.setLocationRelativeTo(this);
-                    dialogo.setVisible(true);
-                } else {
-                    Estilos.mostrarMensaje(this, 
-                        "Paciente no encontrado.", 
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                }
+                    } catch (Exception ex) {
+                        ManejadorErrores.manejarExcepcionInesperada(this, ex, "Asignación de prioridad");
+                    }
+                });
+                
+                panel.add(btnAceptar, BorderLayout.SOUTH);
+                
+                JDialog dialogo = new JDialog(this, "Asignar Prioridad", true);
+                dialogo.add(panel);
+                dialogo.pack();
+                dialogo.setLocationRelativeTo(this);
+                dialogo.setVisible(true);
             });
     }
     
@@ -925,66 +780,14 @@ public class Menu extends JFrame {
     }
     
     private void iniciarTriageParaPaciente(Paciente paciente) {
-        JPanel panel = Estilos.crearPanel(Estilos.COLOR_FONDO);
-        panel.setLayout(new GridLayout(0, 2, 10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        JLabel lblDolor = Estilos.crearEtiqueta("Nivel de dolor (0-10):", Estilos.FUENTE_TEXTO, Estilos.COLOR_TEXTO);
-        JTextField txtDolor = new JTextField();
-        JLabel lblFiebre = Estilos.crearEtiqueta("¿Fiebre alta?", Estilos.FUENTE_TEXTO, Estilos.COLOR_TEXTO);
-        JCheckBox chkFiebre = new JCheckBox();
-        JLabel lblRespirar = Estilos.crearEtiqueta("¿Dificultad para respirar?", Estilos.FUENTE_TEXTO, Estilos.COLOR_TEXTO);
-        JCheckBox chkRespirar = new JCheckBox();
-        panel.add(lblDolor); panel.add(txtDolor);
-        panel.add(lblFiebre); panel.add(chkFiebre);
-        panel.add(lblRespirar); panel.add(chkRespirar);
-        int res = JOptionPane.showConfirmDialog(this, panel, "Evaluación de Triage", JOptionPane.OK_CANCEL_OPTION);
-        if (res == JOptionPane.OK_OPTION) {
-            try {
-                int nivelDolor = Integer.parseInt(txtDolor.getText());
-                boolean fiebreAlta = chkFiebre.isSelected();
-                boolean dificultadRespirar = chkRespirar.isSelected();
-                ResultadoTriage resultado = triage.determinarResultadoTriage(paciente, nivelDolor, fiebreAlta, dificultadRespirar);
-                if (resultado instanceof AltaConTratamiento) {
-                    // Solicitar detalles del tratamiento
-                    Tratamiento tratamiento = solicitarTratamiento(paciente);
-                    paciente.setTratamiento(tratamiento);
-                    sistema.registrarTratamiento(tratamiento);
-                    paciente.actualizarHistorial("Tratamiento asignado: " + tratamiento);
-                    triage.actualizarEstado(paciente.getId(), "Alta con Tratamiento");
-                    Estilos.mostrarMensaje(this, "Paciente dado de alta con tratamiento.", "Alta", JOptionPane.INFORMATION_MESSAGE);
-                } else if (resultado != null) {
-                    resultado.procesarResultado();
-                }
-                actualizarTablaPacientes();
-                actualizarEstadisticasEnTiempoReal();
-            } catch (NumberFormatException ex) {
-                Estilos.mostrarMensaje(this, "El nivel de dolor debe ser un número.", "Error", JOptionPane.ERROR_MESSAGE);
-            }
+        DialogoEvaluacionTriage dialogoTriage = new DialogoEvaluacionTriage(this, paciente, triage, sistema);
+        dialogoTriage.setVisible(true);
+        
+        if (dialogoTriage.fueCompletada()) {
+            actualizarTablaPacientes();
+            actualizarEstadisticasEnTiempoReal();
+            actualizarEstado("🏥 Evaluación de triage completada para " + paciente.getNombre());
         }
-    }
-    
-    private Tratamiento solicitarTratamiento(Paciente paciente) {
-        JPanel panel = Estilos.crearPanel(Estilos.COLOR_FONDO);
-        panel.setLayout(new GridLayout(0, 1, 10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        JTextField txtDesc = new JTextField();
-        JTextField txtIndic = new JTextField();
-        JTextField txtMeds = new JTextField();
-        panel.add(Estilos.crearEtiqueta("Descripción:", Estilos.FUENTE_TEXTO, Estilos.COLOR_TEXTO));
-        panel.add(txtDesc);
-        panel.add(Estilos.crearEtiqueta("Indicaciones:", Estilos.FUENTE_TEXTO, Estilos.COLOR_TEXTO));
-        panel.add(txtIndic);
-        panel.add(Estilos.crearEtiqueta("Medicamentos (separados por coma):", Estilos.FUENTE_TEXTO, Estilos.COLOR_TEXTO));
-        panel.add(txtMeds);
-        int res = JOptionPane.showConfirmDialog(this, panel, "Registrar Tratamiento", JOptionPane.OK_CANCEL_OPTION);
-        if (res == JOptionPane.OK_OPTION) {
-            String idTrat = "T" + System.currentTimeMillis();
-            String desc = txtDesc.getText();
-            String indic = txtIndic.getText();
-            java.util.List<String> meds = Arrays.asList(txtMeds.getText().split(","));
-            return new Tratamiento(idTrat, desc, indic, meds);
-        }
-        return null;
     }
     
     private void actualizarTablaPacientes() {
@@ -1097,36 +900,6 @@ public class Menu extends JFrame {
             });
     }
     
-    private void reactivarPaciente() {
-        Estilos.mostrarInputDialog(this, "Ingrese el ID del paciente a reactivar:", 
-            "Reactivar Paciente", id -> {
-                Paciente paciente = sistema.buscarPacientePorId(id);
-                if (paciente != null) {
-                    if (!paciente.isActivo()) {
-                        Estilos.mostrarConfirmacion(this, 
-                            "¿Está seguro de reactivar al paciente " + paciente.getNombre() + "?", 
-                            "Confirmar reactivación", e -> {
-                                if (admisiones.reactivarPaciente(id)) {
-                                    Estilos.mostrarMensaje(this, "Paciente reactivado con éxito.", 
-                                        "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                                    actualizarTablaPacientes();
-                                    actualizarEstadisticasEnTiempoReal();
-                                } else {
-                                    Estilos.mostrarMensaje(this, "Error al reactivar el paciente.", 
-                                        "Error", JOptionPane.ERROR_MESSAGE);
-                                }
-                            });
-                    } else {
-                        Estilos.mostrarMensaje(this, "El paciente ya está activo.", 
-                            "Información", JOptionPane.INFORMATION_MESSAGE);
-                    }
-                } else {
-                    Estilos.mostrarMensaje(this, "Paciente no encontrado.", 
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            });
-    }
-    
     private void buscarPacientes() {
         String[] criterios = {"nombre", "estado", "prioridad", "genero"};
         JComboBox<String> comboCriterio = new JComboBox<>(criterios);
@@ -1152,48 +925,46 @@ public class Menu extends JFrame {
                 java.util.List<Paciente> resultados = admisiones.buscarPacientes(criterio, valor);
                 
                 if (resultados.isEmpty()) {
-                    Estilos.mostrarMensaje(this, "No se encontraron pacientes con el criterio especificado.", 
-                        "Sin resultados", JOptionPane.INFORMATION_MESSAGE);
+                    ManejadorErrores.mostrarMensaje(this, ManejadorErrores.TipoMensaje.INFORMACION, 
+                        "No se encontraron pacientes con el criterio especificado.");
                 } else {
-                    StringBuilder mensaje = new StringBuilder();
-                    mensaje.append("🔍 RESULTADOS DE BÚSQUEDA\n");
-                    mensaje.append("═══════════════════════════\n");
-                    mensaje.append("Criterio: ").append(criterio).append(" = ").append(valor).append("\n");
-                    mensaje.append("Encontrados: ").append(resultados.size()).append(" paciente(s)\n\n");
-                    
-                    for (Paciente p : resultados) {
-                        mensaje.append("• ID: ").append(p.getId())
-                               .append(" - ").append(p.getNombre())
-                               .append(" (").append(p.getEstado()).append(")\n");
-                    }
-                    
-                    String html = "<html><pre>" + mensaje.toString().replace("\n", "<br>") + "</pre></html>";
-                    Estilos.mostrarMensaje(this, html, "Resultados de Búsqueda", JOptionPane.INFORMATION_MESSAGE);
+                    String titulo = String.format("Resultados de Búsqueda - %s: %s", criterio, valor);
+                    VisualizadorDatos.mostrarTablaPacientes(this, resultados, titulo);
                 }
             } else {
-                Estilos.mostrarMensaje(this, "Debe ingresar un valor para buscar.", 
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                ManejadorErrores.mostrarError(this, ManejadorErrores.CodigoError.CAMPO_REQUERIDO, 
+                    "Debe ingresar un valor para buscar.");
             }
         }
     }
     
     private void verEstadisticasAdmisiones() {
         String estadisticas = admisiones.obtenerEstadisticas();
-        String html = "<html><pre>" + estadisticas.replace("\n", "<br>") + "</pre></html>";
-        Estilos.mostrarMensaje(this, html, "Estadísticas de Admisiones", JOptionPane.INFORMATION_MESSAGE);
+        ManejadorErrores.mostrarMensaje(this, ManejadorErrores.TipoMensaje.INFORMACION, 
+            estadisticas, "Estadísticas de Admisiones");
     }
     
-    // ==================== NUEVOS MÉTODOS DE TRIAGE ====================
+    // ==================== MÉTODOS DE TRIAGE ====================
     
     private void realizarEvaluacionTriage() {
         Estilos.mostrarInputDialog(this, "Ingrese el ID del paciente para evaluación:", 
             "Evaluación de Triage", id -> {
                 Paciente paciente = sistema.buscarPacientePorId(id);
-                if (paciente != null) {
-                    iniciarTriageParaPaciente(paciente);
-                } else {
-                    Estilos.mostrarMensaje(this, "Paciente no encontrado.", 
-                        "Error", JOptionPane.ERROR_MESSAGE);
+                if (!ManejadorErrores.validarExistenciaPaciente(this, paciente, id)) {
+                    return;
+                }
+                
+                try {
+                    DialogoEvaluacionTriage dialogoTriage = new DialogoEvaluacionTriage(this, paciente, triage, sistema);
+                    dialogoTriage.setVisible(true);
+                    
+                    if (dialogoTriage.fueCompletada()) {
+                        actualizarTablaPacientes();
+                        actualizarEstadisticasEnTiempoReal();
+                        actualizarEstado("🏥 Evaluación de triage completada para " + paciente.getNombre());
+                    }
+                } catch (Exception e) {
+                    ManejadorErrores.manejarExcepcionInesperada(this, e, "Apertura de diálogo de triage");
                 }
             });
     }
@@ -1218,22 +989,11 @@ public class Menu extends JFrame {
             java.util.List<Paciente> pacientes = triage.getPacientesPorPrioridad(prioridad);
             
             if (pacientes.isEmpty()) {
-                Estilos.mostrarMensaje(this, "No hay pacientes con prioridad " + prioridad + ".", 
-                    "Sin resultados", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                StringBuilder mensaje = new StringBuilder();
-                mensaje.append("🚨 PACIENTES CON PRIORIDAD ").append(prioridad.toUpperCase()).append("\n");
-                mensaje.append("═══════════════════════════════════\n");
-                mensaje.append("Total: ").append(pacientes.size()).append(" paciente(s)\n\n");
-                
-                for (Paciente p : pacientes) {
-                    mensaje.append("• ID: ").append(p.getId())
-                           .append(" - ").append(p.getNombre())
-                           .append(" (").append(p.getEstado()).append(")\n");
-                }
-                
-                String html = "<html><pre>" + mensaje.toString().replace("\n", "<br>") + "</pre></html>";
-                Estilos.mostrarMensaje(this, html, "Pacientes por Prioridad", JOptionPane.INFORMATION_MESSAGE);
+                ManejadorErrores.mostrarMensaje(this, ManejadorErrores.TipoMensaje.INFORMACION, 
+                    "No hay pacientes con prioridad " + prioridad + ".");
+        } else {
+                String titulo = String.format("Pacientes con Prioridad %s", prioridad);
+                VisualizadorDatos.mostrarTablaPacientes(this, pacientes, titulo);
             }
         }
     }
@@ -1256,38 +1016,50 @@ public class Menu extends JFrame {
         estadisticas.append("Habitaciones disponibles: ").append(triage.getNumeroHabitacionesDisponibles()).append("\n");
         estadisticas.append("Servicios disponibles: ").append(triage.getServiciosDisponibles().size()).append("\n");
         
-        String html = "<html><pre>" + estadisticas.toString().replace("\n", "<br>") + "</pre></html>";
-        Estilos.mostrarMensaje(this, html, "Estadísticas de Triage", JOptionPane.INFORMATION_MESSAGE);
-    }
-    
-    // ==================== MÉTODOS DE ACTUALIZACIÓN Y ESTADÍSTICAS ====================
-    
-    private void actualizarEstadisticasEnTiempoReal() {
-        // Actualizar las tarjetas de estadísticas en el menú principal
-        SwingUtilities.invokeLater(() -> {
-            if (lblTotalPacientes != null) {
-                // Actualizar total de pacientes
-                lblTotalPacientes.setText(String.valueOf(sistema.getPacientes().size()));
-                
-                // Actualizar pacientes activos
-                int activos = (int) sistema.getPacientes().stream().filter(p -> p.isActivo()).count();
-                lblPacientesActivos.setText(String.valueOf(activos));
-                
-                // Actualizar habitaciones disponibles
-                lblHabitacionesDisponibles.setText(String.valueOf(sistema.getNumeroHabitacionesDisponibles()));
-                
-                // Actualizar pacientes críticos
-                int criticos = triage.getPacientesPorPrioridad("Rojo").size();
-                lblPacientesCriticos.setText(String.valueOf(criticos));
-                
-                // Repintar los componentes para mostrar los cambios
-                lblTotalPacientes.repaint();
-                lblPacientesActivos.repaint();
-                lblHabitacionesDisponibles.repaint();
-                lblPacientesCriticos.repaint();
-            }
+        // Crear diálogo con opción de ver detalles
+        JDialog dialogo = new JDialog(this, "Estadísticas de Triage", true);
+        dialogo.setLayout(new BorderLayout());
+        
+        JPanel panel = Estilos.crearPanel(Estilos.COLOR_FONDO);
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        
+        JLabel lblEstadisticas = new JLabel("<html><pre>" + estadisticas.toString().replace("\n", "<br>") + "</pre></html>");
+        lblEstadisticas.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        
+        JScrollPane scrollPane = new JScrollPane(lblEstadisticas);
+        scrollPane.setPreferredSize(new Dimension(400, 300));
+        scrollPane.setBorder(BorderFactory.createLineBorder(Estilos.COLOR_SECUNDARIO));
+        
+        // Panel de botones
+        JPanel panelBotones = Estilos.crearPanel(Estilos.COLOR_FONDO);
+        panelBotones.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        
+        JButton btnVerPorPrioridad = Estilos.crearBoton("🚨 Ver por Prioridad", 
+            new Dimension(150, 35), Estilos.FUENTE_BOTON, 
+            Estilos.COLOR_SECUNDARIO, Color.WHITE);
+        btnVerPorPrioridad.addActionListener(e -> {
+            dialogo.dispose();
+            verPacientesPorPrioridad();
         });
+        
+        JButton btnCerrar = Estilos.crearBoton("❌ Cerrar", 
+            new Dimension(100, 35), Estilos.FUENTE_BOTON, 
+            Estilos.COLOR_ERROR, Color.WHITE);
+        btnCerrar.addActionListener(e -> dialogo.dispose());
+        
+        panelBotones.add(btnVerPorPrioridad);
+        panelBotones.add(btnCerrar);
+        
+        panel.add(scrollPane, BorderLayout.CENTER);
+        panel.add(panelBotones, BorderLayout.SOUTH);
+        
+        dialogo.add(panel);
+        dialogo.pack();
+        dialogo.setLocationRelativeTo(this);
+        dialogo.setVisible(true);
     }
+    
+    // ==================== MÉTODOS DE UTILIDAD ====================
     
     private void mostrarEstadisticasGenerales() {
         StringBuilder estadisticas = new StringBuilder();
@@ -1346,29 +1118,74 @@ public class Menu extends JFrame {
         estadisticas.append("• Servicios clínicos: ").append(sistema.getServicios().size()).append("\n");
         estadisticas.append("• Tratamientos registrados: ").append(sistema.getTratamientos().size()).append("\n");
         
-        String html = "<html><pre>" + estadisticas.toString().replace("\n", "<br>") + "</pre></html>";
-        
-        // Crear un diálogo más grande para las estadísticas
+        // Crear un diálogo más grande para las estadísticas con botones para ver detalles
         JDialog dialogo = new JDialog(this, "Estadísticas Generales del Sistema", true);
         dialogo.setLayout(new BorderLayout());
         
         JPanel panel = Estilos.crearPanel(Estilos.COLOR_FONDO);
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         
-        JLabel lblEstadisticas = new JLabel(html);
+        JLabel lblEstadisticas = new JLabel("<html><pre>" + estadisticas.toString().replace("\n", "<br>") + "</pre></html>");
         lblEstadisticas.setFont(new Font("Monospaced", Font.PLAIN, 12));
         
         JScrollPane scrollPane = new JScrollPane(lblEstadisticas);
-        scrollPane.setPreferredSize(new Dimension(600, 500));
+        scrollPane.setPreferredSize(new Dimension(600, 400));
         scrollPane.setBorder(BorderFactory.createLineBorder(Estilos.COLOR_PRIMARIO));
         
-        JButton btnCerrar = Estilos.crearBoton("Cerrar", 
-            new Dimension(100, 35), Estilos.FUENTE_BOTON, 
+        // Panel de botones para ver detalles
+        JPanel panelBotones = Estilos.crearPanel(Estilos.COLOR_FONDO);
+        panelBotones.setLayout(new GridLayout(2, 3, 10, 10));
+        panelBotones.setBorder(BorderFactory.createEmptyBorder(15, 0, 15, 0));
+        
+        JButton btnVerPacientes = Estilos.crearBoton("👥 Ver Pacientes", 
+            new Dimension(150, 35), Estilos.FUENTE_BOTON, 
             Estilos.COLOR_PRIMARIO, Color.WHITE);
+        btnVerPacientes.addActionListener(e -> {
+            VisualizadorDatos.mostrarTablaPacientes(dialogo, sistema.getPacientes(), "Todos los Pacientes");
+        });
+        
+        JButton btnVerMedicos = Estilos.crearBoton("👨‍⚕️ Ver Médicos", 
+            new Dimension(150, 35), Estilos.FUENTE_BOTON, 
+            Estilos.COLOR_SECUNDARIO, Color.WHITE);
+        btnVerMedicos.addActionListener(e -> {
+            VisualizadorDatos.mostrarTablaMedicos(dialogo, sistema.getMedicos(), "Médicos del Sistema");
+        });
+        
+        JButton btnVerHabitaciones = Estilos.crearBoton("🏠 Ver Habitaciones", 
+            new Dimension(150, 35), Estilos.FUENTE_BOTON, 
+            Estilos.COLOR_ACENTO, Color.WHITE);
+        btnVerHabitaciones.addActionListener(e -> {
+            VisualizadorDatos.mostrarTablaHabitaciones(dialogo, sistema.getHabitaciones(), "Habitaciones del Sistema");
+        });
+        
+        JButton btnVerServicios = Estilos.crearBoton("🏥 Ver Servicios", 
+            new Dimension(150, 35), Estilos.FUENTE_BOTON, 
+            new Color(102, 51, 153), Color.WHITE);
+        btnVerServicios.addActionListener(e -> {
+            VisualizadorDatos.mostrarTablaServicios(dialogo, sistema.getServicios(), "Servicios Clínicos");
+        });
+        
+        JButton btnVerTratamientos = Estilos.crearBoton("💊 Ver Tratamientos", 
+            new Dimension(150, 35), Estilos.FUENTE_BOTON, 
+            new Color(255, 140, 0), Color.WHITE);
+        btnVerTratamientos.addActionListener(e -> {
+            VisualizadorDatos.mostrarTablaTratamientos(dialogo, sistema.getTratamientos(), "Tratamientos Registrados");
+        });
+        
+        JButton btnCerrar = Estilos.crearBoton("❌ Cerrar", 
+            new Dimension(150, 35), Estilos.FUENTE_BOTON, 
+            Estilos.COLOR_ERROR, Color.WHITE);
         btnCerrar.addActionListener(e -> dialogo.dispose());
         
+        panelBotones.add(btnVerPacientes);
+        panelBotones.add(btnVerMedicos);
+        panelBotones.add(btnVerHabitaciones);
+        panelBotones.add(btnVerServicios);
+        panelBotones.add(btnVerTratamientos);
+        panelBotones.add(btnCerrar);
+        
         panel.add(scrollPane, BorderLayout.CENTER);
-        panel.add(btnCerrar, BorderLayout.SOUTH);
+        panel.add(panelBotones, BorderLayout.SOUTH);
         
         dialogo.add(panel);
         dialogo.pack();

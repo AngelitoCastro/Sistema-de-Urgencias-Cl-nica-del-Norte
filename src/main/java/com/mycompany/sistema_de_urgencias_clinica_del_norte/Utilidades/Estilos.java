@@ -84,7 +84,16 @@ public class Estilos {
     }
     
     public static void mostrarMensaje(Component parent, String mensaje, String titulo, int tipo) {
-        JDialog dialogo = new JDialog((Frame)SwingUtilities.getWindowAncestor(parent), titulo, true);
+        // Obtener la ventana padre de forma segura
+        Frame parentFrame = null;
+        if (parent != null) {
+            Window window = SwingUtilities.getWindowAncestor(parent);
+            if (window instanceof Frame) {
+                parentFrame = (Frame) window;
+            }
+        }
+        
+        JDialog dialogo = new JDialog(parentFrame, titulo, true);
         dialogo.setLayout(new BorderLayout());
         
         // Panel principal del diálogo
@@ -144,7 +153,16 @@ public class Estilos {
     
     public static void mostrarConfirmacion(Component parent, String mensaje, String titulo, 
                                          ActionListener onConfirm) {
-        JDialog dialogo = new JDialog((Frame)SwingUtilities.getWindowAncestor(parent), titulo, true);
+        // Obtener la ventana padre de forma segura
+        Frame parentFrame = null;
+        if (parent != null) {
+            Window window = SwingUtilities.getWindowAncestor(parent);
+            if (window instanceof Frame) {
+                parentFrame = (Frame) window;
+            }
+        }
+        
+        JDialog dialogo = new JDialog(parentFrame, titulo, true);
         dialogo.setLayout(new BorderLayout());
         
         // Panel principal del diálogo
@@ -190,7 +208,16 @@ public class Estilos {
     
     public static void mostrarInputDialog(Component parent, String mensaje, String titulo, 
                                         InputDialogListener listener) {
-        JDialog dialogo = new JDialog((Frame)SwingUtilities.getWindowAncestor(parent), titulo, true);
+        // Obtener la ventana padre de forma segura
+        Frame parentFrame = null;
+        if (parent != null) {
+            Window window = SwingUtilities.getWindowAncestor(parent);
+            if (window instanceof Frame) {
+                parentFrame = (Frame) window;
+            }
+        }
+        
+        JDialog dialogo = new JDialog(parentFrame, titulo, true);
         dialogo.setLayout(new BorderLayout());
         
         // Panel principal del diálogo

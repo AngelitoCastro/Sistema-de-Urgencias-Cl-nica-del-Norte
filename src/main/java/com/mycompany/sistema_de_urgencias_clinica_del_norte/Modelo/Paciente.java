@@ -46,7 +46,7 @@ public class Paciente extends Persona {
     public String getEstadoTriage() {
         return estadoTriage;
     }
-
+    
     /**
      * Establece el estado del triage del paciente
      * @param estadoTriage Nuevo estado del triage

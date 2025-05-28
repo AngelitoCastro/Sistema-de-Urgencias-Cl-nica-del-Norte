@@ -23,11 +23,11 @@ import javax.swing.JOptionPane;
  * @author Escritorio -David
  */
 public class Triage {
-    private SistemaUrgencias sistema;
+   private SistemaUrgencias sistema;
 
     public Triage(SistemaUrgencias sistema) {
         this.sistema = sistema;
-    }
+    } 
 
     public ResultadoTriage determinarResultadoTriage(Paciente paciente, int nivelDolor, boolean fiebreAlta, boolean dificultadRespirar) {
         // Registrar la evaluación en el historial del paciente
@@ -70,7 +70,7 @@ public class Triage {
                 String mensaje = "No hay recursos disponibles para el paciente " + paciente.getNombre();
                 if (habitacion == null) mensaje += "\n- Sin habitaciones disponibles";
                 if (servicio == null) mensaje += "\n- Servicio no encontrado";
-                
+              
                 JOptionPane.showMessageDialog(null, mensaje, "Error de Recursos", JOptionPane.WARNING_MESSAGE);
                 return null;
             }

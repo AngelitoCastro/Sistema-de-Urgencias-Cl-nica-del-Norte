@@ -4,14 +4,17 @@
  */
 package com.mycompany.sistema_de_urgencias_clinica_del_norte.Modelo;
 
+import com.mycompany.sistema_de_urgencias_clinica_del_norte.Utilidades.ManejadorErrores;
 import javax.swing.JOptionPane;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
- *
+ * Representa el resultado de admisión a urgencias
  * @author Escritorio -David
  */
 public class AdmitidoUrgencias implements ResultadoTriage {
-
+    
     private Paciente paciente;
     private ServicioClinico servicio;
     private Habitacion habitacion;
@@ -22,70 +25,97 @@ public class AdmitidoUrgencias implements ResultadoTriage {
         this.habitacion = habitacion;
     }
 
-    // Constructor alternativo sin paciente específico
-    public AdmitidoUrgencias(ServicioClinico servicio, Habitacion habitacion) {
-        this.servicio = servicio;
-        this.habitacion = habitacion;
-    }
-
     @Override
     public void procesarResultado() {
-        // Verificar que la habitación esté disponible
-        if (habitacion != null && !habitacion.isDisponible()) {
-            JOptionPane.showMessageDialog(null, 
-                "¡Error! La habitación " + habitacion.getNumero() + 
-                " ya está ocupada o no es válida.", 
-                "Error de Asignación", 
-                JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        // Asignar la habitación
-        if (habitacion != null) {
-            boolean asignada = habitacion.asignar();
-            if (!asignada) {
-                JOptionPane.showMessageDialog(null, 
-                    "No se pudo asignar la habitación " + habitacion.getNumero(), 
-                    "Error de Asignación", 
-                    JOptionPane.ERROR_MESSAGE);
+        try {
+            // Validar datos requeridos
+            if (paciente == null) {
+                ManejadorErrores.mostrarError(null, ManejadorErrores.CodigoError.DATOS_PACIENTE_INVALIDOS, 
+                    "No se puede procesar la admisión sin un paciente válido.");
                 return;
             }
-        }
+            
+            if (servicio == null) {
+                ManejadorErrores.mostrarError(null, ManejadorErrores.CodigoError.SERVICIO_NO_ENCONTRADO, 
+                    "No se puede procesar la admisión sin un servicio clínico asignado.");
+                return;
+            }
+            
+            // Validar y asignar habitación si está disponible
+            if (habitacion != null) {
+                if (!habitacion.isDisponible()) {
+                    ManejadorErrores.mostrarError(null, ManejadorErrores.CodigoError.HABITACION_NO_DISPONIBLE, 
+                        String.format("La habitación %s ya está ocupada o no está disponible.", habitacion.getNumero()));
+                    return;
+                }
+                
+                try {
+                    boolean asignada = habitacion.asignar();
+                    if (!asignada) {
+                        ManejadorErrores.mostrarError(null, ManejadorErrores.CodigoError.ERROR_ASIGNACION_HABITACION, 
+                            String.format("No se pudo asignar la habitación %s. Puede que haya sido ocupada por otro proceso.", 
+                                habitacion.getNumero()));
+                        return;
+                    }
+                } catch (Exception e) {
+                    ManejadorErrores.mostrarError(null, ManejadorErrores.CodigoError.ERROR_ASIGNACION_HABITACION, 
+                        String.format("Error técnico al asignar la habitación %s: %s", 
+                            habitacion.getNumero(), e.getMessage()));
+                    return;
+                }
+            } else {
+                // Advertir si no hay habitación asignada
+                ManejadorErrores.mostrarMensaje(null, ManejadorErrores.TipoMensaje.ADVERTENCIA, 
+                    String.format("El paciente %s será admitido sin habitación específica asignada.", paciente.getNombre()));
+            }
 
-        // Actualizar el estado del paciente
-        if (paciente != null) {
+            // Actualizar el estado del paciente
+            String estadoAnterior = paciente.getEstado();
             paciente.setEstado("Admitido en Urgencias");
             
-            // Actualizar historial del paciente
-            String entrada = "Paciente admitido a urgencias";
-            if (servicio != null) {
-                entrada += "\nServicio asignado: " + servicio.getNombreServicio();
-            }
+            // Generar entrada detallada para el historial
+            LocalDateTime ahora = LocalDateTime.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            String fechaHora = ahora.format(formatter);
+            
+            StringBuilder entradaHistorial = new StringBuilder();
+            entradaHistorial.append("ADMISIÓN A URGENCIAS - ").append(fechaHora).append("\n");
+            entradaHistorial.append("Estado anterior: ").append(estadoAnterior).append("\n");
+            entradaHistorial.append("Servicio asignado: ").append(servicio.getNombreServicio()).append("\n");
+            
             if (habitacion != null) {
-                entrada += "\nHabitación asignada: " + habitacion.getNumero() + " (" + habitacion.getTipo() + ")";
+                entradaHistorial.append("Habitación asignada: ").append(habitacion.getNumero())
+                               .append(" (").append(habitacion.getTipo()).append(")\n");
+            } else {
+                entradaHistorial.append("Sin habitación específica asignada\n");
             }
-            paciente.actualizarHistorial(entrada);
-        }
+            
+            paciente.actualizarHistorial(entradaHistorial.toString());
 
-        // Mostrar mensaje de confirmación
-        StringBuilder mensaje = new StringBuilder("Paciente admitido a urgencias exitosamente.");
-        
-        if (paciente != null) {
-            mensaje.append("\nPaciente: ").append(paciente.getNombre());
-        }
-        
-        if (servicio != null) {
-            mensaje.append("\nServicio asignado: ").append(servicio.toString());
-        }
-        
-        if (habitacion != null) {
-            mensaje.append("\nHabitación asignada: ").append(habitacion.toString());
-        }
+            // Mostrar mensaje de confirmación detallado
+            StringBuilder mensaje = new StringBuilder();
+            mensaje.append("Paciente admitido a urgencias exitosamente.\n\n");
+            mensaje.append("Paciente: ").append(paciente.getNombre()).append(" (ID: ").append(paciente.getId()).append(")\n");
+            mensaje.append("Servicio: ").append(servicio.getNombreServicio()).append("\n");
+            
+            if (habitacion != null) {
+                mensaje.append("Habitación: ").append(habitacion.getNumero())
+                       .append(" - ").append(habitacion.getTipo()).append("\n");
+            }
+            
+            mensaje.append("Fecha y hora: ").append(fechaHora);
 
-        JOptionPane.showMessageDialog(null, 
-            mensaje.toString(), 
-            "Admisión Exitosa", 
-            JOptionPane.INFORMATION_MESSAGE);
+            ManejadorErrores.mostrarExito(null, "Admisión a Urgencias", mensaje.toString());
+            
+            // Registrar operación exitosa en log
+            ManejadorErrores.registrarOperacionExitosa("Admisión a urgencias", 
+                String.format("Paciente %s admitido - Servicio: %s, Habitación: %s", 
+                    paciente.getId(), servicio.getNombreServicio(), 
+                    habitacion != null ? habitacion.getNumero() : "Sin asignar"));
+            
+        } catch (Exception e) {
+            ManejadorErrores.manejarExcepcionInesperada(null, e, "Procesamiento de admisión a urgencias");
+        }
     }
 
     // Getters y Setters
@@ -111,5 +141,13 @@ public class AdmitidoUrgencias implements ResultadoTriage {
 
     public void setHabitacion(Habitacion habitacion) {
         this.habitacion = habitacion;
+    }
+    
+    @Override
+    public String toString() {
+        return String.format("AdmitidoUrgencias{paciente=%s, servicio=%s, habitacion=%s}", 
+            paciente != null ? paciente.getNombre() : "null",
+            servicio != null ? servicio.getNombreServicio() : "null",
+            habitacion != null ? habitacion.getNumero() : "null");
     }
 }
