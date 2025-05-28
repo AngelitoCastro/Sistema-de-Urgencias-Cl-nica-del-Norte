@@ -47,6 +47,12 @@ public class Menu extends JFrame {
     private JButton btnMostrarPacientes;
     private JButton btnSalir;
     private JButton btnVolver;
+    
+    // Referencias a las tarjetas de estadísticas para actualización dinámica
+    private JLabel lblTotalPacientes;
+    private JLabel lblPacientesActivos;
+    private JLabel lblHabitacionesDisponibles;
+    private JLabel lblPacientesCriticos;
 
     public Menu() {
         sistema = new SistemaUrgencias();
@@ -189,12 +195,12 @@ public class Menu extends JFrame {
         JPanel panelTitulo = Estilos.crearPanel(Estilos.COLOR_FONDO);
         panelTitulo.setLayout(new BorderLayout());
         
-        JLabel lblTitulo = Estilos.crearEtiqueta("🏥 Sistema de Urgencias", 
-            Estilos.FUENTE_TITULO, Estilos.COLOR_PRIMARIO);
+        JLabel lblTitulo = Estilos.crearEtiqueta("🏥 SISTEMA DE URGENCIAS", 
+            new Font("Arial", Font.BOLD, 28), Estilos.COLOR_PRIMARIO);
         lblTitulo.setHorizontalAlignment(SwingConstants.CENTER);
         
-        JLabel lblSubtitulo = Estilos.crearEtiqueta("Clínica del Norte - Gestión Hospitalaria", 
-            Estilos.FUENTE_SUBTITULO, Estilos.COLOR_TEXTO);
+        JLabel lblSubtitulo = Estilos.crearEtiqueta("CLÍNICA DEL NORTE - GESTIÓN HOSPITALARIA", 
+            new Font("Arial", Font.BOLD, 16), new Color(100, 100, 100));
         lblSubtitulo.setHorizontalAlignment(SwingConstants.CENTER);
         
         panelTitulo.add(lblTitulo, BorderLayout.CENTER);
@@ -208,18 +214,18 @@ public class Menu extends JFrame {
         panelBotones.setLayout(new GridLayout(2, 2, 15, 15));
         panelBotones.setBorder(BorderFactory.createEmptyBorder(20, 50, 20, 50));
         
-        btnAdmisiones = Estilos.crearBoton("📋 Admisiones", 
+        btnAdmisiones = Estilos.crearBoton("📋 ADMISIONES", 
             new Dimension(200, 60), Estilos.FUENTE_BOTON, 
             Estilos.COLOR_PRIMARIO, Color.WHITE);
-        btnTriage = Estilos.crearBoton("🚨 Triage", 
+        btnTriage = Estilos.crearBoton("⚠ TRIAGE", 
             new Dimension(200, 60), Estilos.FUENTE_BOTON, 
             Estilos.COLOR_SECUNDARIO, Color.WHITE);
-        btnMostrarPacientes = Estilos.crearBoton("👥 Ver Pacientes", 
+        btnMostrarPacientes = Estilos.crearBoton("👤 VER PACIENTES", 
             new Dimension(200, 60), Estilos.FUENTE_BOTON, 
             Estilos.COLOR_ACENTO, Color.WHITE);
-        btnSalir = Estilos.crearBoton("🚪 Salir", 
+        btnSalir = Estilos.crearBoton("🚪 SALIR", 
             new Dimension(200, 60), Estilos.FUENTE_BOTON, 
-            new Color(102, 102, 102), Color.WHITE);
+            new Color(220, 53, 69), Color.WHITE);
         
         panelBotones.add(btnAdmisiones);
         panelBotones.add(btnTriage);
@@ -246,23 +252,29 @@ public class Menu extends JFrame {
         panel.setLayout(new GridLayout(1, 4, 15, 15));
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         
+        // Inicializar las referencias a los labels
+        lblTotalPacientes = new JLabel();
+        lblPacientesActivos = new JLabel();
+        lblHabitacionesDisponibles = new JLabel();
+        lblPacientesCriticos = new JLabel();
+        
         // Estadística 1: Total de pacientes
-        JPanel panelStat1 = crearTarjetaEstadistica("👥", "Pacientes", 
-            String.valueOf(sistema.getPacientes().size()), Estilos.COLOR_PRIMARIO);
+        JPanel panelStat1 = crearTarjetaEstadistica("👤", "Pacientes", 
+            String.valueOf(sistema.getPacientes().size()), Estilos.COLOR_PRIMARIO, lblTotalPacientes);
         
         // Estadística 2: Pacientes activos
         int activos = (int) sistema.getPacientes().stream().filter(p -> p.isActivo()).count();
-        JPanel panelStat2 = crearTarjetaEstadistica("✅", "Activos", 
-            String.valueOf(activos), Estilos.COLOR_SECUNDARIO);
+        JPanel panelStat2 = crearTarjetaEstadistica("❤", "Activos", 
+            String.valueOf(activos), Estilos.COLOR_SECUNDARIO, lblPacientesActivos);
         
         // Estadística 3: Habitaciones disponibles
-        JPanel panelStat3 = crearTarjetaEstadistica("🏠", "Habitaciones", 
-            String.valueOf(sistema.getNumeroHabitacionesDisponibles()), Estilos.COLOR_ACENTO);
+        JPanel panelStat3 = crearTarjetaEstadistica("🛏", "Habitaciones", 
+            String.valueOf(sistema.getNumeroHabitacionesDisponibles()), Estilos.COLOR_ACENTO, lblHabitacionesDisponibles);
         
         // Estadística 4: Pacientes críticos (prioridad roja)
         int criticos = triage.getPacientesPorPrioridad("Rojo").size();
-        JPanel panelStat4 = crearTarjetaEstadistica("🚨", "Críticos", 
-            String.valueOf(criticos), Estilos.COLOR_ERROR);
+        JPanel panelStat4 = crearTarjetaEstadistica("⚠", "Críticos", 
+            String.valueOf(criticos), Estilos.COLOR_ERROR, lblPacientesCriticos);
         
         panel.add(panelStat1);
         panel.add(panelStat2);
@@ -272,34 +284,63 @@ public class Menu extends JFrame {
         return panel;
     }
     
-    private JPanel crearTarjetaEstadistica(String icono, String titulo, String valor, Color color) {
+    private JPanel crearTarjetaEstadistica(String icono, String titulo, String valor, Color color, JLabel lblValorRef) {
         JPanel tarjeta = Estilos.crearPanel(Color.WHITE);
-        tarjeta.setLayout(new BorderLayout(10, 10));
+        tarjeta.setLayout(new BorderLayout(8, 8));
         tarjeta.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(color, 2),
-            BorderFactory.createEmptyBorder(15, 15, 15, 15)
+            BorderFactory.createLineBorder(color, 3),
+            BorderFactory.createEmptyBorder(20, 15, 20, 15)
         ));
         
-        // Icono
-        JLabel lblIcono = new JLabel(icono);
-        lblIcono.setFont(new Font("Arial", Font.PLAIN, 24));
-        lblIcono.setHorizontalAlignment(SwingConstants.CENTER);
+        // Panel superior con icono y título
+        JPanel panelSuperior = Estilos.crearPanel(Color.WHITE);
+        panelSuperior.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
         
-        // Valor principal
+        // Icono mejorado
+        JLabel lblIcono = new JLabel(icono);
+        lblIcono.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
+        lblIcono.setForeground(color);
+        
+        // Título mejorado
+        JLabel lblTitulo = new JLabel(titulo.toUpperCase());
+        lblTitulo.setFont(new Font("Arial", Font.BOLD, 14));
+        lblTitulo.setForeground(new Color(80, 80, 80));
+        
+        panelSuperior.add(lblIcono);
+        panelSuperior.add(Box.createHorizontalStrut(5));
+        panelSuperior.add(lblTitulo);
+        
+        // Valor principal mejorado
         JLabel lblValor = new JLabel(valor);
-        lblValor.setFont(new Font("Arial", Font.BOLD, 28));
+        lblValor.setFont(new Font("Arial", Font.BOLD, 36));
         lblValor.setForeground(color);
         lblValor.setHorizontalAlignment(SwingConstants.CENTER);
         
-        // Título
-        JLabel lblTitulo = new JLabel(titulo);
-        lblTitulo.setFont(new Font("Arial", Font.PLAIN, 12));
-        lblTitulo.setForeground(new Color(128, 128, 128));
-        lblTitulo.setHorizontalAlignment(SwingConstants.CENTER);
+        // Asignar la referencia para poder actualizar después
+        if (lblValorRef != null) {
+            // Copiar las propiedades al label de referencia
+            lblValorRef.setFont(lblValor.getFont());
+            lblValorRef.setForeground(lblValor.getForeground());
+            lblValorRef.setHorizontalAlignment(lblValor.getHorizontalAlignment());
+            lblValorRef.setText(valor);
+            lblValor = lblValorRef; // Usar la referencia
+        }
         
-        tarjeta.add(lblIcono, BorderLayout.NORTH);
+        // Indicador visual adicional
+        JPanel panelIndicador = Estilos.crearPanel(Color.WHITE);
+        panelIndicador.setLayout(new FlowLayout(FlowLayout.CENTER));
+        
+        // Barra de progreso visual simple
+        JPanel barraProgreso = new JPanel();
+        barraProgreso.setBackground(color);
+        barraProgreso.setPreferredSize(new Dimension(60, 4));
+        barraProgreso.setBorder(BorderFactory.createEmptyBorder());
+        
+        panelIndicador.add(barraProgreso);
+        
+        tarjeta.add(panelSuperior, BorderLayout.NORTH);
         tarjeta.add(lblValor, BorderLayout.CENTER);
-        tarjeta.add(lblTitulo, BorderLayout.SOUTH);
+        tarjeta.add(panelIndicador, BorderLayout.SOUTH);
         
         return tarjeta;
     }
@@ -313,24 +354,24 @@ public class Menu extends JFrame {
         JPanel panelSuperior = Estilos.crearPanel(Estilos.COLOR_FONDO);
         panelSuperior.setLayout(new BorderLayout(10, 10));
         
-        JLabel lblTitulo = Estilos.crearEtiqueta("👥 Lista de Pacientes", 
-            Estilos.FUENTE_TITULO, Estilos.COLOR_PRIMARIO);
+        JLabel lblTitulo = Estilos.crearEtiqueta("👤 LISTA DE PACIENTES", 
+            new Font("Arial", Font.BOLD, 24), Estilos.COLOR_PRIMARIO);
         lblTitulo.setHorizontalAlignment(SwingConstants.CENTER);
         
         // Panel de filtros y acciones rápidas
         JPanel panelFiltros = Estilos.crearPanel(Estilos.COLOR_FONDO);
         panelFiltros.setLayout(new FlowLayout(FlowLayout.RIGHT));
         
-        JButton btnRefrescar = Estilos.crearBoton("🔄 Actualizar", 
-            new Dimension(120, 30), new Font("Arial", Font.PLAIN, 12), 
+        JButton btnRefrescar = Estilos.crearBoton("❤ ACTUALIZAR", 
+            new Dimension(130, 32), new Font("Arial", Font.BOLD, 11), 
             Estilos.COLOR_SECUNDARIO, Color.WHITE);
         btnRefrescar.addActionListener(e -> {
             actualizarTablaPacientes();
             actualizarEstadisticasEnTiempoReal();
         });
         
-        JButton btnExportar = Estilos.crearBoton("📊 Estadísticas", 
-            new Dimension(120, 30), new Font("Arial", Font.PLAIN, 12), 
+        JButton btnExportar = Estilos.crearBoton("🛏 ESTADÍSTICAS", 
+            new Dimension(130, 32), new Font("Arial", Font.BOLD, 11), 
             Estilos.COLOR_ACENTO, Color.WHITE);
         btnExportar.addActionListener(e -> mostrarEstadisticasGenerales());
         
@@ -341,7 +382,7 @@ public class Menu extends JFrame {
         panelSuperior.add(panelFiltros, BorderLayout.EAST);
         
         // Tabla de pacientes mejorada
-        String[] columnas = {"ID", "👤 Nombre", "📅 Edad", "⚧ Género", "📊 Estado", "🚨 Prioridad", "💊 Tratamiento", "📋 Historial"};
+        String[] columnas = {"ID", "👤 NOMBRE", "📅 EDAD", "⚧ GÉNERO", "📊 ESTADO", "⚠ PRIORIDAD", "💊 TRATAMIENTO", "📋 HISTORIAL"};
         modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -415,12 +456,12 @@ public class Menu extends JFrame {
         JPanel panelInferior = Estilos.crearPanel(Estilos.COLOR_FONDO);
         panelInferior.setLayout(new FlowLayout(FlowLayout.CENTER, 15, 10));
         
-        btnVolver = Estilos.crearBoton("🏠 Volver al Menú", 
-            new Dimension(150, 35), Estilos.FUENTE_BOTON, 
+        btnVolver = Estilos.crearBoton("🛏 VOLVER AL MENÚ", 
+            new Dimension(160, 38), Estilos.FUENTE_BOTON, 
             Estilos.COLOR_PRIMARIO, Color.WHITE);
         
-        JButton btnNuevoPaciente = Estilos.crearBoton("➕ Nuevo Paciente", 
-            new Dimension(150, 35), Estilos.FUENTE_BOTON, 
+        JButton btnNuevoPaciente = Estilos.crearBoton("👤 NUEVO PACIENTE", 
+            new Dimension(160, 38), Estilos.FUENTE_BOTON, 
             Estilos.COLOR_SECUNDARIO, Color.WHITE);
         btnNuevoPaciente.addActionListener(e -> registrarPaciente());
         
@@ -621,6 +662,7 @@ public class Menu extends JFrame {
                                                 Paciente paciente = admisiones.registrarPaciente(id, nombre, edadInt, genero);
                                                 if (paciente != null) {
                                                     actualizarTablaPacientes();
+                                                    actualizarEstadisticasEnTiempoReal();
                                                     actualizarEstado("✅ Paciente " + nombre + " registrado exitosamente");
                                                     int opcion = JOptionPane.showConfirmDialog(this, 
                                                         "Paciente registrado con éxito. ID: " + paciente.getId() +
@@ -705,6 +747,7 @@ public class Menu extends JFrame {
                                                             "Paciente actualizado con éxito.", 
                                                             "Éxito", JOptionPane.INFORMATION_MESSAGE);
                                                         actualizarTablaPacientes();
+                                                        actualizarEstadisticasEnTiempoReal();
                                                     } else {
                                                         actualizarEstado("❌ Error al actualizar paciente");
                                                         Estilos.mostrarMensaje(this, 
@@ -759,6 +802,7 @@ public class Menu extends JFrame {
                                     "Paciente desactivado con éxito.", 
                                     "Éxito", JOptionPane.INFORMATION_MESSAGE);
                                 actualizarTablaPacientes();
+                                actualizarEstadisticasEnTiempoReal();
                             } else {
                                 Estilos.mostrarMensaje(this, 
                                     "Error al desactivar el paciente.", 
@@ -803,6 +847,7 @@ public class Menu extends JFrame {
                                 "Prioridad asignada con éxito.", 
                                 "Éxito", JOptionPane.INFORMATION_MESSAGE);
                             actualizarTablaPacientes();
+                            actualizarEstadisticasEnTiempoReal();
                         } else {
                             Estilos.mostrarMensaje(this, 
                                 "Error al asignar la prioridad.", 
@@ -856,6 +901,7 @@ public class Menu extends JFrame {
                                 "Estado actualizado con éxito.", 
                                 "Éxito", JOptionPane.INFORMATION_MESSAGE);
                             actualizarTablaPacientes();
+                            actualizarEstadisticasEnTiempoReal();
                         } else {
                             Estilos.mostrarMensaje(this, 
                                 "Error al actualizar el estado.", 
@@ -910,6 +956,7 @@ public class Menu extends JFrame {
                     resultado.procesarResultado();
                 }
                 actualizarTablaPacientes();
+                actualizarEstadisticasEnTiempoReal();
             } catch (NumberFormatException ex) {
                 Estilos.mostrarMensaje(this, "El nivel de dolor debe ser un número.", "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -1015,6 +1062,7 @@ public class Menu extends JFrame {
                                 Estilos.mostrarMensaje(this, "Datos actualizados con éxito.", 
                                     "Éxito", JOptionPane.INFORMATION_MESSAGE);
                                 actualizarTablaPacientes();
+                                actualizarEstadisticasEnTiempoReal();
                             } else {
                                 Estilos.mostrarMensaje(this, "No se realizaron cambios.", 
                                     "Información", JOptionPane.INFORMATION_MESSAGE);
@@ -1062,6 +1110,7 @@ public class Menu extends JFrame {
                                     Estilos.mostrarMensaje(this, "Paciente reactivado con éxito.", 
                                         "Éxito", JOptionPane.INFORMATION_MESSAGE);
                                     actualizarTablaPacientes();
+                                    actualizarEstadisticasEnTiempoReal();
                                 } else {
                                     Estilos.mostrarMensaje(this, "Error al reactivar el paciente.", 
                                         "Error", JOptionPane.ERROR_MESSAGE);
@@ -1216,8 +1265,27 @@ public class Menu extends JFrame {
     private void actualizarEstadisticasEnTiempoReal() {
         // Actualizar las tarjetas de estadísticas en el menú principal
         SwingUtilities.invokeLater(() -> {
-            // Forzar actualización del panel principal
-            cardLayout.show(panelPrincipal, "MENU");
+            if (lblTotalPacientes != null) {
+                // Actualizar total de pacientes
+                lblTotalPacientes.setText(String.valueOf(sistema.getPacientes().size()));
+                
+                // Actualizar pacientes activos
+                int activos = (int) sistema.getPacientes().stream().filter(p -> p.isActivo()).count();
+                lblPacientesActivos.setText(String.valueOf(activos));
+                
+                // Actualizar habitaciones disponibles
+                lblHabitacionesDisponibles.setText(String.valueOf(sistema.getNumeroHabitacionesDisponibles()));
+                
+                // Actualizar pacientes críticos
+                int criticos = triage.getPacientesPorPrioridad("Rojo").size();
+                lblPacientesCriticos.setText(String.valueOf(criticos));
+                
+                // Repintar los componentes para mostrar los cambios
+                lblTotalPacientes.repaint();
+                lblPacientesActivos.repaint();
+                lblHabitacionesDisponibles.repaint();
+                lblPacientesCriticos.repaint();
+            }
         });
     }
     
